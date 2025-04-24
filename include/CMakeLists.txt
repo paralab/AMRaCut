@@ -1,0 +1,1 @@
+configure_file(amracut.h.in amracut.h @ONLY)

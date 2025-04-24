@@ -1,0 +1,1 @@
+target_sources(${TARGET_NAME} PRIVATE amracut.cpp dgraph.cpp utils.cpp octree.cpp)
