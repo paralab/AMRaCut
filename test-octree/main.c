@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     {
       for (size_t j = 0; j < 6; j++)
       {
-        local_elements[i].e2e[j] = UINT_MAX;
+        local_elements[i].e2e[j] = AMRACUT_OCTREE_NO_ELEM;
       }
     }
 

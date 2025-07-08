@@ -9,7 +9,6 @@
 #include "utils.hpp"
 
 #define OCTREE_ELEMENT_FACES_N 6 
-#define OCTREE_BOUNDARY UINT_MAX
 
 
 // Overloading the << operator for oct_element
@@ -65,7 +64,7 @@ namespace amracut
       for (int f = 0; f < OCTREE_ELEMENT_FACES_N; f++)
       {
         amracut_uint_t neighbor_id = e.e2e[f];
-        if (neighbor_id != OCTREE_BOUNDARY)
+        if (neighbor_id != AMRACUT_OCTREE_NO_ELEM)
         {
           if (neighbor_id < vtx_dist__[my_rank] || vtx_dist__[my_rank + 1] <= neighbor_id)
           { 

@@ -10,6 +10,7 @@
 
 #define PRINT_RANK "[",this->my_rank,"] "
 
+#if 0
 #define TIMED_COMM(...) \
 { \
   auto com_start_ = std::chrono::high_resolution_clock::now(); \
@@ -17,6 +18,7 @@
   auto com_end_ = std::chrono::high_resolution_clock::now(); \
   this->com_duration += std::chrono::duration_cast<std::chrono::microseconds>(com_end_ - com_start_); \
 }
+#endif
 
 namespace amracut
 {
@@ -475,9 +477,7 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
 
       if (round_counter > 1)
       {
-        TIMED_COMM(
-          this->StartReceivingUpdatedOnlyGhostCounts();
-        );
+        this->StartReceivingUpdatedOnlyGhostCounts();
         is_not_stable_local = this->RunBFSFromGhostUpdates(bfs_vector,updated_ghosts, updated_ghost_n);
       }
 
@@ -490,15 +490,11 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
 
       if (round_counter > 1) // after the first round, exchanging updated only ghosts is better for communication
       {
-        TIMED_COMM(
-          this->ExchangeUpdatedOnlyGhost(send_buffer, send_buffer_prev, recv_buffer);
-        );
+        this->ExchangeUpdatedOnlyGhost(send_buffer, send_buffer_prev, recv_buffer);
       }
       else
       {
-        TIMED_COMM(
-          this->ExchangeAllGhosts(send_buffer.data(), recv_buffer.data(), BFS_GHOST_EXCHANGE_TAG);
-        );
+        this->ExchangeAllGhosts(send_buffer.data(), recv_buffer.data(), BFS_GHOST_EXCHANGE_TAG);
       }
 
       std::copy(send_buffer.begin(), send_buffer.end(), send_buffer_prev.begin());      // for the next iteration
@@ -525,9 +521,7 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
 
       if (guess_counter >= stop_guess)
       {
-        TIMED_COMM(
-          MPI_Allreduce(&is_not_stable_local, &is_not_stable_global, 1, MPI_CXX_BOOL, MPI_LOR, *(this->comm));
-        );
+        MPI_Allreduce(&is_not_stable_local, &is_not_stable_global, 1, MPI_CXX_BOOL, MPI_LOR, *(this->comm));
       }
       else
       {
@@ -537,7 +531,7 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
     }   // end while (is_not_stable_global)
 
 
-    if(!this->my_rank) print_log("n:",this->global_n, "\tp:", this->procs_n, "\tBFS_iter_count:", round_counter); 
+    // if(!this->my_rank) print_log("n:",this->global_n, "\tp:", this->procs_n, "\tBFS_iter_count:", round_counter); 
     
   }   // end if (this->procs_n > 1)
 
@@ -545,7 +539,7 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
   for (size_t i = 0; i < bfs_vector.size(); i++)
   {
     diffusion_vector[i].label = bfs_vector[i].label;
-    diffusion_vector[i].value = 1;        // TODO: is 1 good for initial value?
+    diffusion_vector[i].value = 1;
   }
 
   // now we run refinement using diffusion
@@ -565,7 +559,7 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
   }
   auto total_time_end = std::chrono::high_resolution_clock::now();
   int64_t total_time = std::chrono::duration_cast<std::chrono::microseconds>(total_time_end - total_time_start).count();
-  int64_t com_time = this->com_duration.count();
+  // int64_t com_time = this->com_duration.count();
 
   if (this->verbose > 0)
   {
@@ -575,71 +569,23 @@ amracut_uint_t amracut::DGraph::PartGraph(amracut_uint_t* partition_labels_out, 
     }
     
     int64_t total_time_min, total_time_max, total_time_avg;
-    int64_t com_time_min, com_time_max, com_time_avg;
 
     total_time_min = total_time_max = total_time_avg = 0;
-    com_time_min = com_time_max = com_time_avg = 0;
+
 
     MPI_Reduce(&total_time, &total_time_min, 1, MPI_INT64_T, MPI_MIN, 0, *this->comm);
     MPI_Reduce(&total_time, &total_time_max, 1, MPI_INT64_T, MPI_MAX, 0, *this->comm);
     MPI_Reduce(&total_time, &total_time_avg, 1, MPI_INT64_T, MPI_SUM, 0, *this->comm);
     total_time_avg = total_time_avg / this->procs_n;
 
-    MPI_Reduce(&com_time, &com_time_min, 1, MPI_INT64_T, MPI_MIN, 0, *this->comm);
-    MPI_Reduce(&com_time, &com_time_max, 1, MPI_INT64_T, MPI_MAX, 0, *this->comm);
-    MPI_Reduce(&com_time, &com_time_avg, 1, MPI_INT64_T, MPI_SUM, 0, *this->comm);
-    com_time_avg = com_time_avg / this->procs_n;
-
     if (!my_rank)
     {
-      print_log("amracut sync rounds : ", round_counter, "\n");
-      print_log(amracut::FormatStatsV1(total_time_min, total_time_max, total_time_avg,com_time_min, com_time_max, com_time_avg) + "\n");
+      print_log("label propagation sync rounds : ", round_counter, "\n");
+      print_log(amracut::FormatStatsV1(total_time_min, total_time_max, total_time_avg));
+      print_log("========================================\n");
     }
   }
-
-  if(this->verbose > 1)
-  {
-    uint64_t sendrecv_size = this->send_size + this->recv_size;
-    
-    uint64_t send_size_min, send_size_max, send_size_avg;
-    uint64_t recv_size_min, recv_size_max, recv_size_avg;
-    uint64_t sendrecv_size_min, sendrecv_size_max, sendrecv_size_avg;
-
-
-    send_size_min = send_size_max = send_size_avg = 0;
-    recv_size_min = recv_size_max = recv_size_avg = 0;
-    sendrecv_size_min = sendrecv_size_max = sendrecv_size_avg = 0;
-
-
-    MPI_Reduce(&this->send_size, &send_size_min, 1, MPI_UINT64_T, MPI_MIN, 0, *this->comm);
-    MPI_Reduce(&this->send_size, &send_size_max, 1, MPI_UINT64_T, MPI_MAX, 0, *this->comm);
-    MPI_Reduce(&this->send_size, &send_size_avg, 1, MPI_UINT64_T, MPI_SUM, 0, *this->comm);
-    send_size_avg = send_size_avg / this->procs_n;
-
-    MPI_Reduce(&this->recv_size, &recv_size_min, 1, MPI_UINT64_T, MPI_MIN, 0, *this->comm);
-    MPI_Reduce(&this->recv_size, &recv_size_max, 1, MPI_UINT64_T, MPI_MAX, 0, *this->comm);
-    MPI_Reduce(&this->recv_size, &recv_size_avg, 1, MPI_UINT64_T, MPI_SUM, 0, *this->comm);
-    recv_size_avg = recv_size_avg / this->procs_n;
-
-    MPI_Reduce(&sendrecv_size, &sendrecv_size_min, 1, MPI_UINT64_T, MPI_MIN, 0, *this->comm);
-    MPI_Reduce(&sendrecv_size, &sendrecv_size_max, 1, MPI_UINT64_T, MPI_MAX, 0, *this->comm);
-    MPI_Reduce(&sendrecv_size, &sendrecv_size_avg, 1, MPI_UINT64_T, MPI_SUM, 0, *this->comm);
-    sendrecv_size_avg = sendrecv_size_avg / this->procs_n;
-
-    if (!my_rank)
-    {
-      print_log(amracut::FormatStatsV2(send_size_min, send_size_max, send_size_avg,
-                                        recv_size_min, recv_size_max, recv_size_avg,
-                                        sendrecv_size_min, sendrecv_size_max, sendrecv_size_avg)
-                                        + "\n");
-    }
-  }
-
-  if (this->verbose >0 && !this->my_rank)
-  {
-    print_log("========================================\n");
-  }
-  
+ 
 
   bfs_vector.clear();
 
@@ -788,204 +734,6 @@ bool amracut::DGraph::RunBFSFromGhostUpdates(std::vector<BFSValue> &bfs_vector,
   return changed;
 }
 
-bool amracut::DGraph::RunBFS(std::vector<BFSValue> &bfs_vector)
-{
-  amracut_uint_t frontier_size = 0;
-
-  // creating the initial frontier
-  // frontier = a set of vertices that can propagate to neighbors
-  // i.e. frontier = {v : v is a vetex; v.label is not NO_LABEL; for at least on neighbor u of v, u.distance > v.distance + 1}
-  for (graph_indexing_t vertex = 0; vertex < (this->local_n + this->ghost_n); vertex++)
-  {
-    for (graph_indexing_t neighbor_i = this->local_xadj[vertex];
-         neighbor_i < this->local_xadj[vertex + 1]; neighbor_i++)
-    {
-      auto neighbor = this->local_adjncy[neighbor_i];
-
-      if (neighbor >= this->local_n)
-        continue; // we don't propagate to ghost vertices
-
-      if (bfs_vector[vertex].label != AMRACUT_BFS_NO_LABEL &&
-          bfs_vector[neighbor].distance > (bfs_vector[vertex].distance + 1))
-      {
-
-        frontier_buffer[frontier_size++] = vertex;
-        break;
-      }
-    }
-  }
-
-  bool changed = false; // to detect if the BFS continued
-
-  while (frontier_size > 0)
-  {
-    amracut_uint_t candidates_n = 0;
-    std::fill(this->is_candidate.begin(), this->is_candidate.end(), 0);
-    for (amracut_uint_t i = 0; i < frontier_size; i++)
-    {
-      graph_indexing_t frontier_vertex = frontier_buffer[i];
-
-      for (graph_indexing_t neighbor_i = this->local_xadj[frontier_vertex];
-           neighbor_i < this->local_xadj[frontier_vertex + 1]; neighbor_i++) // looping neighbors, add to next_updated
-      {
-        auto neighbor = this->local_adjncy[neighbor_i];
-        if (neighbor >= this->local_n)
-        {
-          continue; // we dont update the ghost vertices
-        }
-        if (this->is_candidate[neighbor] == 0) // avoiding uplicate candidates
-        {
-          this->candidates[candidates_n++] = {.local_idx = neighbor, .bfs_value = bfs_vector[neighbor]};
-          this->is_candidate[neighbor] = 1;
-        }
-      }
-    }
-
-    frontier_size = 0;
-
-    // now considering only the neighborhoods of candidates
-    for (amracut_uint_t c_i = 0; c_i < candidates_n; c_i++)
-    {
-      BFSCandidate &c = this->candidates[c_i];
-      bool value_changed = false;
-
-      for (graph_indexing_t neighbor_i = this->local_xadj[c.local_idx];
-           neighbor_i < this->local_xadj[c.local_idx + 1]; neighbor_i++)
-      {
-        auto neighbor = this->local_adjncy[neighbor_i];
-
-        if (bfs_vector[neighbor].label != AMRACUT_BFS_NO_LABEL &&
-            c.bfs_value.distance > (bfs_vector[neighbor].distance + 1))
-        {
-          c.bfs_value.label = bfs_vector[neighbor].label;
-          c.bfs_value.distance = bfs_vector[neighbor].distance + 1;
-
-          if (!value_changed) // to prevent duplicates in next frontier
-          {
-            this->frontier_buffer[frontier_size++] = c.local_idx;
-          }
-          value_changed = true;
-          changed = true;
-        }
-      }
-    }
-
-    // writing updated values to BFS vector
-    for (amracut_uint_t c_i = 0; c_i < candidates_n; c_i++)
-    {
-      const BFSCandidate &c = this->candidates[c_i];
-      bfs_vector[c.local_idx].label = c.bfs_value.label;
-      bfs_vector[c.local_idx].distance = c.bfs_value.distance;
-    }
-  }
-  return changed;
-}
-
-// bool amracut::DGraph::RunBFS(std::vector<BFSValue> &bfs_vector)
-// {
-//   bool changed = false;
-//   bool not_stable = true;
-//   while(not_stable)
-//   {
-//     not_stable = false;
-//     for (graph_indexing_t vertex = 0; vertex < this->local_n; vertex++)
-//     {
-//       for (graph_indexing_t neighbor_i = this->local_xadj[vertex];
-//           neighbor_i < this->local_xadj[vertex + 1]; neighbor_i++)
-//       {
-//         auto neighbor = this->local_adjncy[neighbor_i];
-
-//         if (bfs_vector[neighbor].label != AMRACUT_BFS_NO_LABEL &&
-//             bfs_vector[vertex].distance > (bfs_vector[neighbor].distance + 1))
-//         {
-
-//           bfs_vector[vertex].label = bfs_vector[neighbor].label;
-//           bfs_vector[vertex].distance = bfs_vector[neighbor].distance + 1;
-//           changed = true;
-//           not_stable = true;
-//         }
-//       }
-//     }
-//   }
-//   return changed;
-
-// }
-
-void amracut::DGraph::Adjust(std::vector<BFSValue> &bfs_vector)
-{
-  const amracut_uint_t ideal_size = this->global_n / this->procs_n;
-
-  std::vector<amracut_uint_t> local_partition_sizes(this->procs_n, 0);
-  std::vector<amracut_uint_t> global_partition_sizes(procs_n, 0);
-
-  std::vector<amracut_uint_t> alpha_thresholds(this->alpha_count);
-  std::vector<amracut_uint_t> beta_thresholds(this->beta_count);
-
-  std::vector<int> part_adjust(procs_n, 0);
-
-  for (size_t i = 0; i < this->local_n; i++)
-  {
-    local_partition_sizes[bfs_vector[i].label]++;
-  }
-
-  auto com_start_ = std::chrono::high_resolution_clock::now();
-  MPI_Allreduce(local_partition_sizes.data(), global_partition_sizes.data(),
-                procs_n, Mpi_datatype<amracut_uint_t>::value(), MPI_SUM, *this->comm);
-  auto com_end_ = std::chrono::high_resolution_clock::now();
-  this->com_duration += std::chrono::duration_cast<std::chrono::microseconds>(com_end_ - com_start_);
-
-  this->send_size += sizeof(amracut_uint_t) * this->procs_n;
-  this->recv_size += sizeof(amracut_uint_t) * this->procs_n;
-
-
-  std::transform(alpha_vals.begin(), alpha_vals.end(), alpha_thresholds.begin(),
-                 [ideal_size](auto alpha)
-                 { return static_cast<amracut_uint_t>(alpha * ideal_size); });
-
-  std::transform(beta_vals.begin(), beta_vals.end(), beta_thresholds.begin(),
-                 [ideal_size](auto beta)
-                 { return static_cast<amracut_uint_t>(beta * ideal_size); });
-
-  for (int p_i = 0; p_i < this->procs_n; p_i++)
-  {
-    if (global_partition_sizes[p_i] > ideal_size)
-    {
-      for (int j = 0; j < this->alpha_count; j++)
-      {
-        if (global_partition_sizes[p_i] >= alpha_thresholds[j])
-        {
-          part_adjust[p_i] = d_plus_vals[j];
-          break;
-        }
-      }
-    }
-    else
-    {
-      for (int j = 0; j < this->beta_count; j++)
-      {
-        if (global_partition_sizes[p_i] <= beta_thresholds[j])
-        {
-          part_adjust[p_i] = d_minus_vals[j];
-          break;
-        }
-      }
-    }
-  }
-
-  for (amracut_uint_t i = 0; i < (local_n + ghost_n); i++) // we adjust both local and ghost bfs values to reduce the global sync rounds
-  {
-    auto adjust_val = part_adjust[bfs_vector[i].label];
-    if (adjust_val > 0)
-    {
-      bfs_vector[i].distance += static_cast<bfs_distance_t>(adjust_val); // TODO: assumes this does not overflow
-    }
-    else if (adjust_val < 0)
-    {
-      bfs_distance_t abs_val = static_cast<bfs_distance_t>(std::abs(adjust_val));
-      bfs_vector[i].distance = bfs_vector[i].distance >= abs_val ? bfs_vector[i].distance - abs_val : 0; // we don't allow (-) distances
-    }
-  }
-}
 
 void amracut::DGraph::RefineByDiffusion(std::vector<DiffusionValue> &diffusion_vector)
 {
@@ -996,16 +744,16 @@ void amracut::DGraph::RefineByDiffusion(std::vector<DiffusionValue> &diffusion_v
 
 
   std::vector<int> level_1_2_neigh_procs;
-  // TIMED_COMM(
+
   //   this->DiscoverLevel1and2NeighProcs(level_1_2_neigh_procs);
-  // )
+
 
 
   std::vector<amracut_uint_t> partition_sizes(this->procs_n, 0);
 
-  TIMED_COMM(
-    this->SyncGlobalPartSizes(diffusion_vector, partition_sizes);
-  );
+
+  this->SyncGlobalPartSizes(diffusion_vector, partition_sizes);
+
 
   amracut_uint_t total_global_size = std::accumulate(partition_sizes.begin(), partition_sizes.end(), 0);
 
@@ -1025,9 +773,7 @@ void amracut::DGraph::RefineByDiffusion(std::vector<DiffusionValue> &diffusion_v
   for (int d_i = 0; d_i < max_diffusion_iterations; d_i++)
   {
     // starting ghost sync
-    TIMED_COMM(
-      this->StartReceivingDiffusionGhost(&diffusion_asyc_comm);
-    )
+    this->StartReceivingDiffusionGhost(&diffusion_asyc_comm);
     this->DiffuseOnce(diffusion_vector, diffusion_rates);
 
     this->UpdateDiffusionLabels(diffusion_vector, partition_sizes, diffusion_rates,
@@ -1038,10 +784,8 @@ void amracut::DGraph::RefineByDiffusion(std::vector<DiffusionValue> &diffusion_v
     {
       this->diffusion_send_buffer[send_i] = diffusion_vector[this->send_scatter_map[send_i]];
     }
-    TIMED_COMM(
-      this->EndReceivingDiffusionGhost(&diffusion_asyc_comm);
+    this->EndReceivingDiffusionGhost(&diffusion_asyc_comm);
       // this->ExchangeAllGhosts(this->diffusion_send_buffer.data(), &diffusion_vector[this->local_n], DIFFUSION_GHOST_EXCHANGE_TAG);
-    );
 
     for (size_t recv_i = 0; recv_i < this->ghost_n; recv_i++)
     {
@@ -1052,12 +796,12 @@ void amracut::DGraph::RefineByDiffusion(std::vector<DiffusionValue> &diffusion_v
 
     // this->DiffuseCompact(diffusion_vector, diffusion_rates, compact_diffusion_level);
 
-    TIMED_COMM(
+
       // this->SyncNeighborPartSizes(partition_sizes, local_parts_size_deltas, level_1_2_neigh_procs);
       // this->SyncNeighborPartSizes(partition_sizes, local_parts_size_deltas, this->ghost_procs);
 
-      this->SyncGlobalPartSizes(diffusion_vector, partition_sizes);
-    );
+    this->SyncGlobalPartSizes(diffusion_vector, partition_sizes);
+
     this->UpdateDiffusionRates(partition_sizes, total_global_size,diffusion_rates );
   }
 
@@ -1215,7 +959,7 @@ void amracut::DGraph::UpdateDiffusionLabels(std::vector<DiffusionValue> &diffusi
 
 }    
 
-
+#if 0
 void amracut::DGraph::FillDiffusionCompactLevel2(std::vector<uint8_t> &compact_level)
 {
   for (amracut_uint_t vertex = 0; vertex < this->local_n; vertex++)
@@ -1239,7 +983,7 @@ void amracut::DGraph::FillDiffusionCompactLevel2(std::vector<uint8_t> &compact_l
     }
   }
 }
-
+#endif
 
 void amracut::DGraph::SyncGlobalPartSizes(const std::vector<DiffusionValue> &diffusion_vector,
                                            std::vector<amracut_uint_t> &global_partition_sizes)
@@ -1259,13 +1003,13 @@ void amracut::DGraph::SyncGlobalPartSizes(const std::vector<DiffusionValue> &dif
     
   }
 
-  TIMED_COMM(
-    MPI_Allreduce(local_partition_sizes.data(), global_partition_sizes.data(),
-                  procs_n, Mpi_datatype<amracut_uint_t>::value(), MPI_SUM, *this->comm);
-  );
+
+  MPI_Allreduce(local_partition_sizes.data(), global_partition_sizes.data(),
+                procs_n, Mpi_datatype<amracut_uint_t>::value(), MPI_SUM, *this->comm);
 
 }
 
+#if 0
 void amracut::DGraph::DiscoverLevel1and2NeighProcs(std::vector<int> &neighbor_procs)
 {
   // first we get the count of ghost procs of each of my ghost procs (i.e. the count of level 2 neighbors)
@@ -1312,6 +1056,7 @@ void amracut::DGraph::DiscoverLevel1and2NeighProcs(std::vector<int> &neighbor_pr
   neighbor_procs.resize(level2_procs_filtered.size());
   std::copy(level2_procs_filtered.begin(), level2_procs_filtered.end(), neighbor_procs.begin());
 }
+
 
 void amracut::DGraph::SyncNeighborPartSizes(std::vector<amracut_uint_t> &est_part_sizes,
                                              const std::unordered_map<amracut_uint_t, amracut_sint_t> &local_p_size_deltas,
@@ -1391,7 +1136,7 @@ void amracut::DGraph::SyncNeighborPartSizes(std::vector<amracut_uint_t> &est_par
                                                                        );
   }
 }                                             
-
+#endif
 
 void amracut::DGraph::StartReceivingDiffusionGhost(DiffusionGhostAsyncInfo* comm_info)
 {
@@ -1418,7 +1163,7 @@ void amracut::DGraph::EndReceivingDiffusionGhost(DiffusionGhostAsyncInfo* comm_i
   MPI_Waitall(this->ghost_procs_n + this->send_procs_n, comm_info->requests, comm_info->statuses);
 }
 
-
+#if 0
 void amracut::DGraph::DiffuseCompact(std::vector<DiffusionValue> &diffusion_vector,
                                       const std::vector<amracut_real_t> &partition_diffusion_rates,
                                       const std::vector<uint8_t> &compact_diffusion_level)
@@ -1464,12 +1209,11 @@ void amracut::DGraph::DiffuseCompact(std::vector<DiffusionValue> &diffusion_vect
     {
       this->diffusion_send_buffer[send_i] = diffusion_vector[this->send_scatter_map[send_i]];
     }
-    TIMED_COMM(
-      this->ExchangeAllGhosts(this->diffusion_send_buffer.data(), &diffusion_vector[this->local_n], COMPACT_DIFFUSION_GHOST_EXCHANGE_TAG);
-    );
+    this->ExchangeAllGhosts(this->diffusion_send_buffer.data(), &diffusion_vector[this->local_n], COMPACT_DIFFUSION_GHOST_EXCHANGE_TAG);
+
   }
 }     
-
+#endif
 
 
 
@@ -1499,11 +1243,9 @@ void amracut::DGraph::EndReceivingUpdatedOnlyGhostCounts()
     this->send_size += sizeof(int);
   }
 
-  // auto start_ = std::chrono::high_resolution_clock::now();
+
   MPI_Waitall(this->ghost_procs_n + this->send_procs_n, this->updated_count_mpi_requests.data(), this->updated_count_mpi_statuses.data());
-  // print_log("[", my_rank, "]: done EndExchangingUpdatedOnlyGhostCounts");
-  // auto end_ = std::chrono::high_resolution_clock::now();
-  // if(!my_rank) print_log("count exchange waitall time: ", std::chrono::duration_cast<std::chrono::microseconds>(end_ - start_).count(), "us");
+
 }
 
 

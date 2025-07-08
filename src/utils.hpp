@@ -1,9 +1,9 @@
 /**
  * @file    utils.hpp
- * @author  
+ * @author  Budvin Edippuliarachchi
  * @brief   Utility functions
- * @version 0.1
- * @date 2024-10-25
+ * @version 1.0
+ * @date    2025-07-08
  * 
  * @copyright Copyright (c) 2024
  * 
@@ -57,7 +57,7 @@ namespace amracut
    * @brief Template Classes to convert C++ types to MPI data types
    * 
    */
-  #define HS_MPIDATATYPE(CTYPE, MPITYPE)	\
+  #define AMRACUT_MPIDATATYPE(CTYPE, MPITYPE)	\
     template <>  \
       class Mpi_datatype<CTYPE> \
       {  \
@@ -67,21 +67,21 @@ namespace amracut
                           } \
       };
 
-      HS_MPIDATATYPE(short,          MPI_SHORT)
-      HS_MPIDATATYPE(int,            MPI_INT)
-      HS_MPIDATATYPE(long,           MPI_LONG)
-      HS_MPIDATATYPE(unsigned short, MPI_UNSIGNED_SHORT)
-      HS_MPIDATATYPE(unsigned int,   MPI_UNSIGNED)
-      HS_MPIDATATYPE(unsigned long,  MPI_UNSIGNED_LONG)
-      HS_MPIDATATYPE(float,          MPI_FLOAT)
-      HS_MPIDATATYPE(double,         MPI_DOUBLE)
-      HS_MPIDATATYPE(long double,    MPI_LONG_DOUBLE)
-      HS_MPIDATATYPE(long long,    MPI_LONG_LONG_INT)
-      HS_MPIDATATYPE(char,    MPI_CHAR)
-      HS_MPIDATATYPE(unsigned char,    MPI_UNSIGNED_CHAR)
+      AMRACUT_MPIDATATYPE(short,          MPI_SHORT)
+      AMRACUT_MPIDATATYPE(int,            MPI_INT)
+      AMRACUT_MPIDATATYPE(long,           MPI_LONG)
+      AMRACUT_MPIDATATYPE(unsigned short, MPI_UNSIGNED_SHORT)
+      AMRACUT_MPIDATATYPE(unsigned int,   MPI_UNSIGNED)
+      AMRACUT_MPIDATATYPE(unsigned long,  MPI_UNSIGNED_LONG)
+      AMRACUT_MPIDATATYPE(float,          MPI_FLOAT)
+      AMRACUT_MPIDATATYPE(double,         MPI_DOUBLE)
+      AMRACUT_MPIDATATYPE(long double,    MPI_LONG_DOUBLE)
+      AMRACUT_MPIDATATYPE(long long,    MPI_LONG_LONG_INT)
+      AMRACUT_MPIDATATYPE(char,    MPI_CHAR)
+      AMRACUT_MPIDATATYPE(unsigned char,    MPI_UNSIGNED_CHAR)
 
 
-  #undef HS_MPIDATATYPE
+  #undef AMRACUT_MPIDATATYPE
 
   /**
    * @brief Template class to convert a std::pair<T1,T2> to MPI data type.
@@ -208,31 +208,12 @@ namespace amracut
    * @param total_time_min 
    * @param total_time_max 
    * @param total_time_avg 
-   * @param com_time_min 
-   * @param com_time_max 
-   * @param com_time_avg 
    * @return std::string 
    */
-  std::string FormatStatsV1(uint64_t total_time_min, uint64_t total_time_max, uint64_t total_time_avg,
-                          uint64_t com_time_min, uint64_t com_time_max, uint64_t com_time_avg);
+  std::string FormatStatsV1(uint64_t total_time_min, 
+                            uint64_t total_time_max, 
+                            uint64_t total_time_avg);
 
-  /**
-   * @brief Pretty print v2 stats
-   * 
-   * @param send_size_min 
-   * @param send_size_max 
-   * @param send_size_avg 
-   * @param recv_size_min 
-   * @param recv_size_max 
-   * @param recv_size_avg 
-   * @param sendrecv_size_min 
-   * @param sendrecv_size_max 
-   * @param sendrecv_size_avg 
-   * @return std::string 
-   */
-  std::string FormatStatsV2(uint64_t send_size_min, uint64_t send_size_max, uint64_t send_size_avg,
-                            uint64_t recv_size_min, uint64_t recv_size_max, uint64_t recv_size_avg,
-                            uint64_t sendrecv_size_min, uint64_t sendrecv_size_max, uint64_t sendrecv_size_avg);
 
 } // namespace amracut
 

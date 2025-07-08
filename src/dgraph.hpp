@@ -1,9 +1,9 @@
 /**
  * @file    dgraph.hpp
- * @author  
+ * @author  Budvin Edippuliarachchi
  * @brief   Interface for distributed graph data structure class
- * @version 0.1
- * @date 2024-10-25
+ * @version 1.0
+ * @date    2025-07-08
  * 
  * @copyright Copyright (c) 2024
  * 
@@ -310,17 +310,6 @@ namespace amracut
     static constexpr uint8_t COMPACT_LEVEL_NONE = std::numeric_limits<uint8_t>::max();
 
 
-
-
-    // Adjust related constants
-    static constexpr int alpha_count = 6;
-    static constexpr std::array<float,  alpha_count>  alpha_vals    = {3.2, 2.5, 2.0, 1.7, 1.5, 1.2};
-    static constexpr std::array<int,    alpha_count>  d_plus_vals   = {6, 5, 4, 3, 2, 1};
-
-    static constexpr int beta_count = 4;
-    static constexpr std::array<float,  beta_count>   beta_vals     = {0.2, 0.4, 0.6, 0.8};
-    static constexpr std::array<int,    beta_count>   d_minus_vals  = {-4, -3, -2, -1};
-
     // stats related
     int verbose;
     std::chrono::microseconds com_duration;
@@ -355,26 +344,6 @@ namespace amracut
                                 std::vector<graph_indexing_t> &updated_ghosts, amracut_uint_t updated_ghosts_n);
 
     /**
-     * @brief Continues local BFS iteration from a given BFS state
-     * 
-     * Does not update the BFS status of ghost vertices.
-     * 
-     * @param bfs_vector            BFS state vector of local and ghost vertices
-     * @return true                 if BFS continued
-     * @return false                if BFS is already stable
-     */
-    bool RunBFS(std::vector<BFSValue> &bfs_vector);
-
-    /**
-     * @brief Apply the BFS distance perturbation by comparing the current partition sizes.
-     * 
-     * Can be called only after the BFS is in global stable state.
-     * 
-     * @param bfs_vector 
-     */
-    void Adjust(std::vector<BFSValue> &bfs_vector);
-
-    /**
      * @brief Refines a given partition labelling by performing graph laplacian type diffusion on `diffusion_vector`
      * 
      * @param diffusion_vector    Should be an already initialized diffusion vector
@@ -384,7 +353,7 @@ namespace amracut
 
     void DiffuseOnce(std::vector<DiffusionValue> &diffusion_vector,
                      const std::vector<amracut_real_t> &partition_diffusion_rates);
-
+    #if 0
     void DiffuseCompact(std::vector<DiffusionValue> &diffusion_vector,
                         const std::vector<amracut_real_t> &partition_diffusion_rates,
                         const std::vector<uint8_t> &compact_diffusion_level);
@@ -394,6 +363,8 @@ namespace amracut
                                const std::unordered_map<amracut_uint_t, amracut_sint_t> &local_p_size_deltas,
                                std::vector<int> &neighbor_procs);
     void DiscoverLevel1and2NeighProcs(std::vector<int> &neighbor_procs);
+    #endif
+
     void SyncGlobalPartSizes(const std::vector<DiffusionValue> &diffusion_vector,
                              std::vector<amracut_uint_t> &global_partition_sizes);                            
 

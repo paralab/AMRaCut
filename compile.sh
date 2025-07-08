@@ -2,9 +2,15 @@ set -e
 
 mkdir -p build
 
-cmake -G Ninja -S . -B build
+cmake -DAMRACUT_INTEGER_WIDTH=32 -S . -B build
+cmake --build build --target install --verbose
 
-ninja install -C ./build -v
+# ====== if Ninja is installed ======
+
+# cmake -G Ninja -S . -B build
+# ninja install -C ./build -v
+
+# ===================================
 
 echo -e "========== AMRaCut lib compile successfull ==========\n"
 

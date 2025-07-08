@@ -18,6 +18,17 @@ int main(int argc, char *argv[])
 
     amracut_ctrl ctrl;
 
+    /**
+     * example graph
+     * 
+     *   0───1───2───3───4
+     *   │   │   │   │   |
+     *   5───6───7───8───9
+     *   │   │   │   │   |
+     *  10──11──12──13──14
+     * 
+     */
+
     amracut_uint_t vtx_dist[5] = {0, 5, 10, 15};
 
     amracut_uint_t xadj_0[6] = {0, 2, 5, 8, 11, 13};

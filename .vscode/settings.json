@@ -70,10 +70,10 @@
         "inttypes.h": "c",
         "unordered_set": "cpp"
     },
-    "cmake.configureArgs": [
-        "-G Ninja"
-    ],
-    "cmake.buildToolArgs": ["-v"],
+    // "cmake.configureArgs": [
+    //     "-G Ninja"
+    // ],
+    // "cmake.buildToolArgs": ["--verbose"],
     "c-cpp-flylint.cppcheck.enable": true,
     "c-cpp-flylint.cppcheck.extraArgs": ["--check-level=exhaustive", "--enable=all"],
     "c-cpp-flylint.cppcheck.force": true,
