@@ -55,10 +55,27 @@ int main(int argc, char *argv[])
     amracut_setup(&ctrl, vtx_dist, xadj, adjncy, NULL, NULL, AMRACUT_UNWEIGHTED, &comm);
 
     amracut_uint_t *parts = (amracut_uint_t *)malloc(10*sizeof(amracut_uint_t));
-    amracut_partgraph(&ctrl,parts, true, &comm, 1);
+    amracut_partgraph(&ctrl,parts, true, 1);
 
     // printf("%d\n", rest);
     amracut_destroy(&ctrl);
+
+
+    char output[500] = {'\0'};
+    char tempbuf[10];
+    snprintf(tempbuf, 10, "%d", my_rank);
+    strcat(output, tempbuf);
+    strcat(output, " : [");
+
+    for (amracut_uint_t i = 0; i < vtx_dist[my_rank + 1] - vtx_dist[my_rank]; i++)
+    {
+        snprintf(tempbuf, 10, "%d", parts[i]);
+        strcat(output, tempbuf);
+        strcat(output, ", ");
+    }
+    strcat(output, "]\n");
+
+    printf("%s", output);
 
     MPI_Finalize();
     free(parts);

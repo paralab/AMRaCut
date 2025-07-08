@@ -69,7 +69,7 @@ amracut_setup(&ctrl, vtx_dist, xadj, adjncy, vwgt, adjwgt, wgtflag, &comm);
 amracut_uint_t *parts = malloc(local_vertex_count * sizeof(amracut_uint_t));
 
 // Compute partitioning
-amracut_partgraph(&ctrl, parts, true, &comm, 1);
+amracut_partgraph(&ctrl, parts, true, 1);
 
 // Clean up
 amracut_destroy(&ctrl);
@@ -130,7 +130,6 @@ Initializes local graph structure and temporary buffers. Must be called before `
 amracut_uint_t amracut_partgraph(amracut_ctrl *ctrl, 
                                    amracut_uint_t *parts, 
                                    bool use_diffusion, 
-                                   MPI_Comm *comm, 
                                    int verbose);
 ```
 

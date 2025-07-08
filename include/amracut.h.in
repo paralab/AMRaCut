@@ -1,11 +1,11 @@
 /**
  * @file    amracut.h.in
- * @author  
+ * @author  Budvin Edippuliarachchi
  * @brief   Interface for amracut
- * @version 0.1
- * @date    2024-10-25
+ * @version 1.0
+ * @date    2025-07-08
  * 
- * @copyright Copyright (c) 2024
+ * @copyright Copyright (c) 2025
  * 
  */
 
@@ -59,16 +59,22 @@ extern "C"
    * 
    * Must be called before `amracut_destroy` and `amracut_partgraph`.
    * 
-   * Caller can reuse/free `ctrl`, `vtx_dist`, `xadj`, `adjncy`. Those are deep copied to internal buffers.
+   * Caller can reuse/free `ctrl`, `vtx_dist`, `xadj`, `adjncy`. Those are deep 
+   * copied to internal buffers.
    * 
    * @param ctrl      Opaque object that holds internal data structures.
-   * @param vtx_dist  Vertex range for each calling process. Process P_i stores the vertices from vtxdist[i] up to (but not including) vertex vtxdist[i + 1]
+   * @param vtx_dist  Vertex range for each calling process. Process P_i stores 
+   * the vertices from vtxdist[i] up to (not including) vertex vtxdist[i + 1]
    * @param xadj      local graph structure CSR encoding pointers.
    * @param adjncy    local graph structure CSR encoding values.
    * @param vwgt      Local vertex weights
    * @param adjwgt    Edge weights
    * @param wgtflag   Flag to indicate if the graph is weighted. 
-   *                  Should be one of `AMRACUT_UNWEIGHTED, AMRACUT_VTX_WEIGHTED, AMRACUT_EDGE_WEIGHTED, AMRACUT_VTX_EDGE_WEIGHTED`
+   *                  Should be one of 
+   *                    `AMRACUT_UNWEIGHTED
+   *                     AMRACUT_VTX_WEIGHTED, 
+   *                     AMRACUT_EDGE_WEIGHTED, 
+   *                     AMRACUT_VTX_EDGE_WEIGHTED`
    * @param comm      MPI communicator.
    * @return amracut_uint_t 
    * 
@@ -95,12 +101,13 @@ extern "C"
    * Should be called only after calling `amracut_setup`
    * 
    * @param ctrl          Opaque object that holds internal data structures.
-   * @param parts         Output of computed partition labels in range [0, p -1]. Must be initialized by the caller to hold labels for locally owned vertices.
-   * @param comm          MPI communicator.
-   * @param[in] verbose   verbosity level for performance stats
+   * @param parts         Output of computed partition labels in range [0, p -1]. 
+   * Must be initialized by the caller to hold labels for locally owned vertices.
+   * @param use_diffucion Boolean flag to enable diffusion step for refinement
+   * @param verbose   verbosity level for performance stats
    * @return amracut_uint_t 
    */
-  amracut_uint_t amracut_partgraph(amracut_ctrl *ctrl, amracut_uint_t *parts, bool use_diffusion, MPI_Comm *comm, int verbose);
+  amracut_uint_t amracut_partgraph(amracut_ctrl *ctrl, amracut_uint_t *parts, bool use_diffusion, int verbose);
 
 
   typedef struct

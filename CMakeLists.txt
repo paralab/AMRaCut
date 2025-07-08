@@ -25,10 +25,11 @@ if(NOT DEFINED AMRACUT_INTEGER_WIDTH)
     set(AMRACUT_INTEGER_WIDTH 32)
 endif()
 
+message("Using AMRACUT_INTEGER_WIDTH = ${AMRACUT_INTEGER_WIDTH}")
+
 target_compile_definitions(${TARGET_NAME} PUBLIC AMRACUT_INTEGER_WIDTH=${AMRACUT_INTEGER_WIDTH})
 
 
-# add_compile_definitions(AMRACUT_INTEGER_WIDTH=${AMRACUT_INTEGER_WIDTH})
 
 # Find MPI package
 # include(FindMPI)
@@ -46,8 +47,6 @@ add_subdirectory(src)
 # Add the include directory to the search path
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include)
 target_include_directories(${TARGET_NAME} PRIVATE src)
-
-# target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src/dist-graph)
 
 
 # Set default install directory to build_dir/install if not provided
@@ -72,15 +71,4 @@ file(GLOB gen_header_files "${CMAKE_BINARY_DIR}/include/*.h")
 # Install the files that match the pattern
 install(FILES ${gen_header_files} DESTINATION include)
 
-# set(DRIVER_TARGET_NAME "test")
 
-
-# add_executable(${DRIVER_TARGET_NAME} test/main.c)
-
-# # target_link_libraries(${DRIVER_TARGET_NAME} PRIVATE MPI::MPI_C)
-
-
-# # Add the include directory to the search path
-# target_include_directories(${DRIVER_TARGET_NAME} PRIVATE ${CMAKE_BINARY_DIR}/include)
-# target_link_libraries(${DRIVER_TARGET_NAME} PRIVATE ${TARGET_NAME})
-# target_link_libraries(${DRIVER_TARGET_NAME} PUBLIC MPI::MPI_C)

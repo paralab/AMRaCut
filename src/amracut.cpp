@@ -6,14 +6,14 @@
 #include <stdexcept>
 
 amracut_uint_t amracut_setup(amracut_ctrl *ctrl, const amracut_uint_t *vtx_dist,
-                              const amracut_uint_t *xadj, const amracut_uint_t *adjncy,
-                              const amracut_uint_t *vwgt, const amracut_uint_t *adjwgt, 
-                              const amracut_uint_t wgtflag, MPI_Comm *comm)
+                             const amracut_uint_t *xadj, const amracut_uint_t *adjncy,
+                             const amracut_uint_t *vwgt, const amracut_uint_t *adjwgt, 
+                             const amracut_uint_t wgtflag, MPI_Comm *comm)
 {          
   if (!(wgtflag == AMRACUT_UNWEIGHTED || wgtflag == AMRACUT_VTX_WEIGHTED || 
         wgtflag == AMRACUT_EDGE_WEIGHTED|| wgtflag == AMRACUT_VTX_EDGE_WEIGHTED))
   {
-    throw std::runtime_error("amracut ERROR: wgtflag should be one of 0, 1, 2, 3 n");
+    throw std::runtime_error("amracut ERROR: wgtflag should be one of 0, 1, 2, 3");
   }
 
   if ((wgtflag == AMRACUT_VTX_WEIGHTED || wgtflag == AMRACUT_VTX_EDGE_WEIGHTED) && vwgt == NULL)
@@ -30,7 +30,7 @@ amracut_uint_t amracut_setup(amracut_ctrl *ctrl, const amracut_uint_t *vtx_dist,
   return 0;
 }
 
-amracut_uint_t amracut_partgraph(amracut_ctrl *ctrl, amracut_uint_t *parts, bool use_diffusion, MPI_Comm *comm, int verbose)
+amracut_uint_t amracut_partgraph(amracut_ctrl *ctrl, amracut_uint_t *parts, bool use_diffusion, int verbose)
 {
 
   amracut::DGraph *dgraph = static_cast<amracut::DGraph *>(ctrl->internal_);
